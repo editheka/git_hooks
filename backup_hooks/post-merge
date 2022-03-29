@@ -1,0 +1,12 @@
+#!/bin/bash
+
+BASE_FOLDER=$(git rev-parse --show-toplevel)
+
+echo $BASE_FOLDER
+
+chmod -R a+r "$BASE_FOLDER"
+
+find "$BASE_FOLDER" -type d -exec chmod a+rx {} \;
+
+$BASE_FOLDER/.hooks/install_hooks.sh
+
