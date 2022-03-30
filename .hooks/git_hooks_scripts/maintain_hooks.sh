@@ -65,7 +65,7 @@ removing_old_hooks_from_git_hooks_direcotry
 main() {
   sync_managed_hooks_with_hooks_in_git_hook_direcotry
   
-  echo -e "\033[0m"
+  echo -e "\033[0m"  #this is used to restore back the color of the terminal to white
 }
 main $@ 
 
