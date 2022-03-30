@@ -15,7 +15,7 @@ declare -a LIST_OF_HOOKS_TO_BE_ADDED
 
 BASE_DIRECTORY=$(git rev-parse --show-toplevel)
 
-list_of_managed_hooks=`ls -p $BASE_DIRECTORY/.hooks | grep -v /` #getting only files and not directories "ls -p adds / at the end of directories. Grep -v allows to excloud names that contain / from the listing.
+list_of_managed_hooks=`ls -p $BASE_DIRECTORY/.hooks | grep -v /` #getting only files and not directories "ls -p adds / at the end of directories. Grep -v allows to excloud names that contain / from the listing."
 list_of_hook_in_git_directory=`ls $BASE_DIRECTORY/.git/hooks`
 
 
