@@ -1,103 +1,71 @@
 #!/bin/bash 
 
-#This script maintains git hooks by removing from the .git/hook directory 
-#those hooks wich are not longer in the .hook folder. It also adds a soft
-#link of new hooks in the .hooks directory to the .git/hooks directory
-#the script outputs to the user the hooks that have been removed and 
-#those which have been added 
+#This script syncronises the managed hooks in the .hooks directory with the hooks in the .git/hooks direcotry
+#If a new hook is added to the .hooks direcotry it will autamatically be added in form of a soft link to the .git/hooks direcotry
+#if a hook is removed from the .hooks direcotry it will autamatically be removed also from the .git/hooks direcotory (the soft link will be removed
+#the output of added or removed hooks will be provided to the user
 
 Red=$'\e[1;31m'
 Green=$'\e[1;32m'
 Blue=$'\e[1;34m'
 
+declare -a LIST_OF_HOOKS_TO_BE_DELETED
+declare -a LIST_OF_HOOKS_TO_BE_ADDED
 
 BASE_DIRECTORY=$(git rev-parse --show-toplevel)
 
-list_of_hooks_manged=`ls -p $BASE_DIRECTORY/.hooks | grep -v /`
+list_of_managed_hooks=`ls -p $BASE_DIRECTORY/.hooks | grep -v /` #getting only files and not directories "ls -p adds / at the end of directories. Grep -v allows to excloud names that contain / from the listing.
 list_of_hook_in_git_directory=`ls $BASE_DIRECTORY/.git/hooks`
 
-declare -a LIST_OF_HOOKS_TO_BE_DELETED 
-declare -a LIST_OF_HOOKS_TO_BE_ADDED
 
-#this function loads the list of hooks into the following Array LIST_OF_HOOKS_TO_BE_DELETED an array has been used in order to modify the original data gatherad by ls ./git/hook
+adding_new_managed_hooks_to_git_hooks_directory() {  
+  let i=0
+  for hook in $list_of_managed_hooks; do
+    check_if_hook_in_git_hooks=`echo $list_of_hook_in_git_directory | grep -w $hook` #checking if $hook is in .git/hooks directory 
+    if [[ $check_if_hook_in_git_hooks == '' ]]; then
+      ln -sf $BASE_DIRECTORY/.hooks/$hook $BASE_DIRECTORY/.git/hooks #adding a soft link of the new hook to the .git/hooks directory
+      LIST_OF_HOOKS_TO_BE_ADDED[i]="${hook}"
+      ((i++))
+    fi
+  done
+  
+  if [ "${#LIST_OF_HOOKS_TO_BE_ADDED[@]}" != "0" ]; then
+    printf "$Green%s\n" "Adding the following hooks from $BASE_DIRECTORY/.hooks:"
+    printf "$Green%s\n" "${LIST_OF_HOOKS_TO_BE_ADDED[@]}"
+  fi
 
-load_data() {
+}
+
+removing_old_hooks_from_git_hooks_direcotry() {
   let i=0
   for hook in $list_of_hook_in_git_directory; do 
-    LIST_OF_HOOKS_TO_BE_DELETED[i]="${hook}"
-    ((i++))
-  done
-
-  let i=0
-  for hook in $list_of_hooks_manged; do
-    LIST_OF_HOOKS_TO_BE_ADDED[i]="${hook}"
-    ((i++))
-  done
-}
-
-#this function deletes all the hooks in .git/hook directory that are note anymore available in the .hook directory
-
-cleanup_hooks() {
-  
-#comparing if hooks in the .hoook direcotry are also in ./git/hook directory.
-#if they are they will be removed from the array LIST_OF_HOOKS_TO_BE_DELETED 
-#In this way it is possible to have the list of hooks in .git/hooks directory
-#that are not anymore in the .hook directory. This list will be used to identify and delete these hooks
-
-  for hook in $list_of_hooks_manged; do
-    let i=0
-    for git_hook in $list_of_hook_in_git_directory; do
-      if [ "$hook" == "$git_hook" ]; then
-        unset -v LIST_OF_HOOKS_TO_BE_DELETED[$i]
-      fi
+    check_if_hook_in_managed_hooks=`echo $list_of_managed_hooks | grep -w $hook`
+    if [[ $check_if_hook_in_managed_hooks == '' ]]; then
+      rm  $BASE_DIRECTORY/.git/hooks/$hook
+      LIST_OF_HOOKS_TO_BE_DELETED[i]="${hook}"
       ((i++))
-      done
-    done
-
-#deleting hooks and showing which hooks are being deleted
-#Deleting is executed only if the LIST_OF_HOOKS_TO_BE_DELETED array is not empty
-
-   if [ "${#LIST_OF_HOOKS_TO_BE_DELETED[@]}" != "0" ]; then
-     echo "$Red Deleting the following hooks from $BASE_DIRECTORY/.git/hooks:"
-     for hook in ${LIST_OF_HOOKS_TO_BE_DELETED[@]}; do
-       echo " $hook"  
-       rm  $BASE_DIRECTORY/.git/hooks/$hook 
-     done
-   fi
- }   
-
-#this function adds to the .git/hooks directory new hooks created in the .hook directory
-
-add_new_hooks() {
-  let i=0
-  for hook in $list_of_hooks_manged; do
-    for git_hook in $list_of_hook_in_git_directory; do
-      if [ "$hook" == "$git_hook" ]; then
-        unset -v LIST_OF_HOOKS_TO_BE_ADDED[$i]
-      fi
-      done
-    ((i++))
-    done
-   
-   if [ "${#LIST_OF_HOOKS_TO_BE_ADDED[@]}" != "0" ]; then
-     echo "$Green Adding a soft link for the folloiwng hooks in the $BASE_DIRECTORY/.git/hooks:"
-     for hook in ${LIST_OF_HOOKS_TO_BE_ADDED[@]}; do
-       echo " $hook"
-       ln -sf ../../.hooks/$hook $BASE_DIRECTORY/.git/hooks
-   done
-   fi
+    fi
+  done
+  
+  if [ "${#LIST_OF_HOOKS_TO_BE_DELETED[@]}" != "0" ]; then
+    printf "$Red%s\n" "Deleting the following hooks from $BASE_DIRECTORY/.git/hooks:"
+    printf "$Red%s\n" "${LIST_OF_HOOKS_TO_BE_DELETED[@]}"
+  fi
 }
+
+sync_managed_hooks_with_hooks_in_git_hook_direcotry() {
+
+adding_new_managed_hooks_to_git_hooks_directory
+removing_old_hooks_from_git_hooks_direcotry
+
+}
+
 
 main() {
-
-  load_data
-  cleanup_hooks
-  add_new_hooks
+  sync_managed_hooks_with_hooks_in_git_hook_direcotry
   
   echo -e "\033[0m"
-
 }
-
 main $@ 
 
  
