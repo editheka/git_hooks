@@ -3,6 +3,7 @@
 #This script syncronises the managed hooks in the .hooks directory with the hooks in the .git/hooks direcotry
 #If a new hook is added to the .hooks direcotry it will autamatically be added in form of a soft link to the .git/hooks direcotry
 #if a hook is removed from the .hooks direcotry it will autamatically be removed also from the .git/hooks direcotory (the soft link will be removed
+#if a hook is accidentaly added in the .git/hooks direcotry and not in the .hooks direcotry, the hook in .git/hooks will be automatically removed
 #the output of added or removed hooks will be provided to the user
 
 Red=$'\e[1;31m'
